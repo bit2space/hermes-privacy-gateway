@@ -1,0 +1,28 @@
+# Polish spaCy NER for mostly-Polish conversations.
+#
+# lang_code stays "en" on purpose: it is the Presidio registry label, and the
+# predefined pattern recognizers (email, IBAN, credit card, IP, URL, ...) are
+# registered for "en" only. The model itself is Polish, which cuts the false
+# positives the English model produces on Polish common words.
+nlp_engine_name: spacy
+models:
+  - lang_code: en
+    model_name: pl_core_news_lg
+
+ner_model_configuration:
+  model_to_presidio_entity_mapping:
+    persName: PERSON
+    orgName: ORGANIZATION
+    placeName: LOCATION
+    geogName: LOCATION
+
+  default_score: 0.85
+  low_confidence_score_multiplier: 0.4
+  low_score_entity_names: []
+
+  # Relative dates and times ("jutro", "w piątek") are the bulk of spaCy's
+  # date/time hits and aliasing them breaks scheduling answers. Explicit dates
+  # are still covered by Presidio's pattern-based DateRecognizer.
+  labels_to_ignore:
+    - date
+    - time

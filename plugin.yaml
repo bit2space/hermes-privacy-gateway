@@ -33,6 +33,14 @@ config_schema:
     type: bool
     default: false
     description: Enable Presidio BasicLangExtractRecognizer for local LLM-assisted PII detection.
+  nlp_config:
+    type: str
+    default: nlp.yaml
+    description: Presidio NLP configuration file, relative to the plugin directory (nlp.yaml = English, nlp-pl.yaml = Polish) or absolute.
+  allow_list:
+    type: list
+    default: []
+    description: Terms that are never aliased (case-insensitive exact match on the detected span, surrounding punctuation ignored).
   enable_pl_recognizers:
     type: bool
     default: false

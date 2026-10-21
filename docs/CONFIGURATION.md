@@ -20,6 +20,8 @@ plugins:
         score_threshold: 0.55
         enable_langextract: false
         langextract_config_path: ""
+        nlp_config: nlp.yaml
+        allow_list: []
         enable_pl_recognizers: false
         block_non_text_content: true
         rehydrate_tool_allowlist: []
@@ -46,6 +48,18 @@ Default: `false`
 When enabled, the plugin adds Presidio's `BasicLangExtractRecognizer` programmatically. Presidio marks this feature experimental and documents local Ollama support.
 
 With no custom config path, the recognizer uses Presidio's default LangExtract configuration. Current Presidio docs say that default uses a local Ollama model and that the model must be pulled/running first.
+
+### `nlp_config`
+
+Default: `nlp.yaml`
+
+Presidio NLP configuration, relative to the plugin directory or absolute. `nlp.yaml` uses `en_core_web_lg`; `nlp-pl.yaml` uses `pl_core_news_lg` for mostly-Polish text. The English model tags many Polish common words as people or organizations, so Polish conversations end up heavily aliased. The model must be installed the same way as `en_core_web_lg` (see INSTALL.md), using the `pl_core_news_lg-3.8.0` wheel. `nlp-pl.yaml` keeps the `en` registry label so the pattern recognizers stay active, and ignores spaCy's relative date/time labels.
+
+### `allow_list`
+
+Default: `[]`
+
+Terms that are never aliased, such as product and tool names the NER model mistakes for people or organizations (`Notion`, `MCP`, `Claude`). Matching is case-insensitive on the whole detected span, ignoring surrounding punctuation, so `Notion` does not exempt a span like `Notion Kamil`.
 
 ### `enable_pl_recognizers`
 

@@ -42,7 +42,7 @@ def _get_engine(ctx):
                 from privacy import PrivacyEngine
 
             _ENGINE = PrivacyEngine(
-                nlp_config_path=_PLUGIN_DIR / "nlp.yaml",
+                nlp_config_path=_PLUGIN_DIR / str(_config(ctx, "nlp_config", "nlp.yaml")),
                 language=str(_config(ctx, "language", "en")),
                 score_threshold=float(_config(ctx, "score_threshold", 0.55)),
                 enable_langextract=bool(_config(ctx, "enable_langextract", False)),
@@ -52,6 +52,9 @@ def _get_engine(ctx):
                 enable_pl_recognizers=bool(
                     _config(ctx, "enable_pl_recognizers", False)
                 ),
+                allow_list=[
+                    str(term) for term in (_config(ctx, "allow_list", []) or [])
+                ],
             )
         except Exception as exc:
             _ENGINE_ERROR = exc

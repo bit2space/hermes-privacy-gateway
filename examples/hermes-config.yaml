@@ -12,6 +12,8 @@ plugins:
         score_threshold: 0.55
         enable_langextract: false
         langextract_config_path: ""
+        nlp_config: nlp.yaml
+        allow_list: []
         enable_pl_recognizers: false
         block_non_text_content: true
 

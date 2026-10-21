@@ -24,6 +24,9 @@ BLOCKED_REQUEST = "[PRIVACY_GATEWAY_BLOCKED_REQUEST]"
 BLOCKED_TOOL_RESULT = "[PRIVACY_GATEWAY_BLOCKED_TOOL_RESULT]"
 NON_TEXT_BLOCK = "[PRIVACY_GATEWAY_BLOCKED_NON_TEXT_CONTENT]"
 
+# Punctuation ignored around a detected span when matching the allow list.
+_ALLOW_LIST_STRIP = " \t\r\n.,:;!?()[]{}\"'`*_"
+
 # Conservative structured-secret patterns. These are deliberately narrow;
 # domain-specific secrets should be added as Presidio recognizers or local rules.
 _PEM_PRIVATE_KEY = re.compile(
@@ -173,8 +176,14 @@ def select_non_overlapping_results(
     return sorted(selected, key=lambda item: (int(item.start), int(item.end)))
 
 
+def _allow_list_key(value: str) -> str:
+    return value.strip(_ALLOW_LIST_STRIP).casefold()
+
+
 class PrivacyEngine:
     """Local detector + stable pseudonymizer."""
+
+    allow_list: frozenset[str] = frozenset()
 
     def __init__(
         self,
@@ -185,10 +194,14 @@ class PrivacyEngine:
         enable_langextract: bool = False,
         langextract_config_path: str = "",
         enable_pl_recognizers: bool = False,
+        allow_list: Sequence[str] = (),
         vault: AliasVault | None = None,
     ) -> None:
         self.language = language
         self.score_threshold = score_threshold
+        self.allow_list = frozenset(
+            _allow_list_key(term) for term in allow_list if _allow_list_key(term)
+        )
         self.vault = vault or AliasVault()
 
         from presidio_analyzer import AnalyzerEngine
@@ -264,6 +277,15 @@ class PrivacyEngine:
                     result.start < end and result.end > start
                     for start, end in protected
                 )
+            ]
+
+        # Never alias explicitly allowed terms (product and tool names that the
+        # NER model mistakes for people or organizations).
+        if self.allow_list:
+            results = [
+                result
+                for result in results
+                if _allow_list_key(text[result.start : result.end]) not in self.allow_list
             ]
 
         if not results:
