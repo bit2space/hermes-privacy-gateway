@@ -184,6 +184,7 @@ class PrivacyEngine:
         score_threshold: float = 0.55,
         enable_langextract: bool = False,
         langextract_config_path: str = "",
+        enable_pl_recognizers: bool = False,
         vault: AliasVault | None = None,
     ) -> None:
         self.language = language
@@ -226,6 +227,15 @@ class PrivacyEngine:
             else:
                 recognizer = BasicLangExtractRecognizer()
             self.analyzer.registry.add_recognizer(recognizer)
+
+        if enable_pl_recognizers:
+            if __package__:
+                from .pl_recognizers import polish_recognizers
+            else:  # direct development import outside Hermes package loader
+                from pl_recognizers import polish_recognizers
+
+            for recognizer in polish_recognizers(language):
+                self.analyzer.registry.add_recognizer(recognizer)
 
     @staticmethod
     def remove_high_confidence_secrets(text: str) -> str:

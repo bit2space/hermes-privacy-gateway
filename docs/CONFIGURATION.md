@@ -20,6 +20,7 @@ plugins:
         score_threshold: 0.55
         enable_langextract: false
         langextract_config_path: ""
+        enable_pl_recognizers: false
         block_non_text_content: true
         rehydrate_tool_allowlist: []
 ```
@@ -45,6 +46,21 @@ Default: `false`
 When enabled, the plugin adds Presidio's `BasicLangExtractRecognizer` programmatically. Presidio marks this feature experimental and documents local Ollama support.
 
 With no custom config path, the recognizer uses Presidio's default LangExtract configuration. Current Presidio docs say that default uses a local Ollama model and that the model must be pulled/running first.
+
+### `enable_pl_recognizers`
+
+Default: `false`
+
+Registers Polish recognizers on the analyzer's language registry (`language`, normally `en`). Presidio ships its Polish recognizers for the `pl` registry only, so with the default English configuration Polish identifiers are not detected at all.
+
+| Entity | Detected when |
+|---|---|
+| `PHONE_NUMBER` | `+48`/`0048` prefix; a bare 9-digit or `(22) 123-45-67` number only next to a phone context word (`tel`, `komórka`, `phone`, `sms`, ...) |
+| `PL_PESEL` | 11 digits with a valid date part and checksum |
+| `PL_NIP` | valid checksum and a `PL` prefix or dashed grouping; a plain 10-digit number only next to `NIP`/`VAT` |
+| `PL_ID_CARD` | `ABC123456` with a valid checksum next to `dowód`/`seria` |
+
+Bare numbers that merely pass a checksum keep a low score, so order IDs and timestamps are not aliased without context. Identifiers are matched as whole tokens only.
 
 ### `langextract_config_path`
 

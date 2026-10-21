@@ -49,6 +49,9 @@ def _get_engine(ctx):
                 langextract_config_path=str(
                     _config(ctx, "langextract_config_path", "")
                 ),
+                enable_pl_recognizers=bool(
+                    _config(ctx, "enable_pl_recognizers", False)
+                ),
             )
         except Exception as exc:
             _ENGINE_ERROR = exc

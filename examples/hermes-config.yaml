@@ -12,6 +12,7 @@ plugins:
         score_threshold: 0.55
         enable_langextract: false
         langextract_config_path: ""
+        enable_pl_recognizers: false
         block_non_text_content: true
 
         # Secure default: resolve no aliases for tools.

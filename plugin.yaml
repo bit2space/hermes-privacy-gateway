@@ -33,6 +33,10 @@ config_schema:
     type: bool
     default: false
     description: Enable Presidio BasicLangExtractRecognizer for local LLM-assisted PII detection.
+  enable_pl_recognizers:
+    type: bool
+    default: false
+    description: Register Polish recognizers (phone, PESEL, NIP, ID card) on the analyzer language registry.
   langextract_config_path:
     type: str
     default: ""
