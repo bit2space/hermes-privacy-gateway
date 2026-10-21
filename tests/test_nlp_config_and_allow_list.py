@@ -20,7 +20,7 @@ def memory_vault():
     return AliasVault(connection=sqlite3.connect(":memory:"), encoded_key=key)
 
 
-def engine_with_fake_spans(spans, allow_list):
+def engine_with_fake_spans(spans, allow_list=()):
     engine = object.__new__(PrivacyEngine)
     engine.language = "en"
     engine.score_threshold = 0.55
@@ -32,8 +32,9 @@ def engine_with_fake_spans(spans, allow_list):
             results = []
             for value, entity in spans:
                 start = text.index(value)
+                score = 0.75 if entity == "PHONE_NUMBER" else 0.85
                 results.append(
-                    SimpleNamespace(start=start, end=start + len(value), score=0.85, entity_type=entity)
+                    SimpleNamespace(start=start, end=start + len(value), score=score, entity_type=entity)
                 )
             return results
 
@@ -60,6 +61,12 @@ def test_allow_list_does_not_exempt_spans_that_merely_contain_a_term():
 def test_allow_list_ignores_surrounding_punctuation():
     engine = engine_with_fake_spans([("Claude,", "PERSON")], allow_list=["Claude"])
     assert engine.sanitize("Zapytaj Claude, potem odpisz.") == "Zapytaj Claude, potem odpisz."
+
+
+def test_digit_only_name_entities_yield_to_pattern_types():
+    engine = engine_with_fake_spans([("728934610", "PERSON"), ("728934610", "PHONE_NUMBER")])
+    sanitized = engine.sanitize("tel. 728934610")
+    assert sanitized.startswith("tel. [PHONE_NUMBER_")
 
 
 def test_polish_nlp_config_tags_names_not_common_words():

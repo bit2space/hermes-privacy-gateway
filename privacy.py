@@ -24,6 +24,9 @@ BLOCKED_REQUEST = "[PRIVACY_GATEWAY_BLOCKED_REQUEST]"
 BLOCKED_TOOL_RESULT = "[PRIVACY_GATEWAY_BLOCKED_TOOL_RESULT]"
 NON_TEXT_BLOCK = "[PRIVACY_GATEWAY_BLOCKED_NON_TEXT_CONTENT]"
 
+# NER entity types that only make sense for spans containing letters.
+_NAME_ENTITIES = frozenset({"PERSON", "ORGANIZATION", "LOCATION", "NRP"})
+
 # Punctuation ignored around a detected span when matching the allow list.
 _ALLOW_LIST_STRIP = " \t\r\n.,:;!?()[]{}\"'`*_"
 
@@ -287,6 +290,15 @@ class PrivacyEngine:
                 for result in results
                 if _allow_list_key(text[result.start : result.end]) not in self.allow_list
             ]
+
+        # spaCy NER sometimes tags a bare number as a person or place; a name has
+        # letters. Dropping these lets the pattern recognizer type win.
+        results = [
+            result
+            for result in results
+            if result.entity_type not in _NAME_ENTITIES
+            or any(char.isalpha() for char in text[result.start : result.end])
+        ]
 
         if not results:
             return text
