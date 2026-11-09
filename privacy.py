@@ -289,11 +289,26 @@ class PrivacyEngine:
 
         # Never alias entity types the operator opted out of (for example URL,
         # when links are workspace identifiers rather than personal data).
+        # spaCy NER often tags the same link as a person or place, so name
+        # entities overlapping an ignored span are dropped too; pattern types
+        # (an email inside a URL match) keep their aliasing.
         if self.ignore_entities:
+            ignored = [
+                (result.start, result.end)
+                for result in results
+                if result.entity_type in self.ignore_entities
+            ]
             results = [
                 result
                 for result in results
                 if result.entity_type not in self.ignore_entities
+                and not (
+                    result.entity_type in _NAME_ENTITIES
+                    and any(
+                        result.start < end and result.end > start
+                        for start, end in ignored
+                    )
+                )
             ]
 
         # Never alias explicitly allowed terms (product and tool names that the

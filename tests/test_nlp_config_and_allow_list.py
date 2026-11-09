@@ -75,6 +75,17 @@ def test_ignore_entities_keeps_ignored_types_only():
     assert "Kamil Grabowski" not in sanitized
 
 
+def test_ignore_entities_drops_overlapping_name_spans_but_not_patterns():
+    url = "https://app.notion.so/p/Task-413b3d88a7828130a02ec1cad7e4615e"
+    engine = engine_with_fake_spans(
+        [(url, "URL"), (url, "PERSON"), ("ola@example.com", "EMAIL_ADDRESS"), ("example.com", "URL")],
+        ignore_entities=["URL"],
+    )
+    sanitized = engine.sanitize(f"Link {url} i mail ola@example.com")
+    assert url in sanitized
+    assert "ola@example.com" not in sanitized
+
+
 def test_digit_only_name_entities_yield_to_pattern_types():
     engine = engine_with_fake_spans([("728934610", "PERSON"), ("728934610", "PHONE_NUMBER")])
     sanitized = engine.sanitize("tel. 728934610")
