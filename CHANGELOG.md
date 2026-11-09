@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Keep Chat Completions tool-call `arguments` valid JSON: the JSON string is
+  decoded, its values are sanitized, and it is re-encoded. Aliasing it as plain
+  text let a detected span swallow a quote (`"Tomasz"` became
+  `"[PERSON_...]`), so providers that parse the arguments rejected the request.
 - Declare Hermes `>=0.20.4`, the first release providing the plugin storage API
   used by the encrypted alias vault.
 - Register the middleware even when `presidio-analyzer` is not installed: a

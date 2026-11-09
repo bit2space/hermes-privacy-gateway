@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 import base64
+import json
 import secrets
 import sqlite3
 
@@ -70,6 +71,53 @@ def test_model_text_walk_preserves_unknown_scalar_metadata():
 
     assert out["metadata"] == value["metadata"]
     assert out["content"] == "<Alice Example>"
+
+
+def test_model_text_walk_keeps_json_string_arguments_valid():
+    # Chat Completions tool calls carry arguments as a JSON string. A detector
+    # span that ends on the closing quote must not break the JSON.
+    def greedy(text):
+        return text.replace('Tomasz"', "[PERSON_1]").replace("Tomasz", "[PERSON_1]")
+
+    value = [
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {
+                        "name": "send_message",
+                        "arguments": json.dumps(
+                            {"to": "Tomasz", "tags": ["Tomasz", 3], "zażółć": "Gdańsk"},
+                            ensure_ascii=False,
+                        ),
+                    },
+                }
+            ],
+        }
+    ]
+
+    out = walk_model_text(value, greedy)
+
+    call = out[0]["tool_calls"][0]
+    assert call["id"] == "call_1"
+    assert call["function"]["name"] == "send_message"
+    arguments = json.loads(call["function"]["arguments"])
+    assert arguments == {"to": "[PERSON_1]", "tags": ["[PERSON_1]", 3], "zażółć": "Gdańsk"}
+    assert "Gdańsk" in call["function"]["arguments"]
+
+
+def test_model_text_walk_non_json_arguments_fall_back_to_text():
+    value = {"arguments": "not json: Alice Example"}
+    out = walk_model_text(value, lambda text: f"<{text}>")
+    assert out == {"arguments": "<not json: Alice Example>"}
+
+
+def test_model_text_walk_empty_arguments_string_unchanged():
+    out = walk_model_text({"arguments": ""}, lambda text: f"<{text}>" if text else text)
+    assert out == {"arguments": ""}
 
 
 def test_detects_image_payload():

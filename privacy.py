@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Sequence
@@ -72,6 +73,13 @@ _MODEL_PAYLOAD_KEYS = {
     "input",
     "output",
 }
+# Chat Completions carries tool-call arguments as a JSON-encoded string. Aliasing
+# that string as plain text lets a detected span swallow a quote or delimiter
+# (`"Tomasz"` -> `"[PERSON_...]`), and providers that parse the arguments
+# reject the whole request. Decode, sanitize the values, and re-encode instead.
+_JSON_STRING_PAYLOAD_KEYS = {
+    "arguments",
+}
 
 
 def walk_strings(value: Any, string_fn) -> Any:
@@ -117,11 +125,27 @@ def walk_model_text(value: Any, string_fn, *, mode: str = "content") -> Any:
                 item_mode = "content"
             elif normalized_key in _MODEL_PAYLOAD_KEYS:
                 item_mode = "payload"
+                if normalized_key in _JSON_STRING_PAYLOAD_KEYS and isinstance(item, str):
+                    transformed[key] = _walk_json_string(item, string_fn)
+                    continue
             else:
                 item_mode = "scan"
             transformed[key] = walk_model_text(item, string_fn, mode=item_mode)
         return transformed
     return value
+
+
+def _walk_json_string(value: str, string_fn) -> str:
+    """Sanitize the values of a JSON-encoded payload, keeping it valid JSON.
+
+    Strings that are not JSON (or are empty) fall back to plain-text handling.
+    """
+    try:
+        decoded = json.loads(value)
+    except ValueError:
+        return string_fn(value)
+    sanitized = walk_model_text(decoded, string_fn, mode="payload")
+    return json.dumps(sanitized, ensure_ascii=False)
 
 
 def contains_non_text_model_content(value: Any) -> bool:
