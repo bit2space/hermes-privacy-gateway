@@ -187,6 +187,7 @@ class PrivacyEngine:
     """Local detector + stable pseudonymizer."""
 
     allow_list: frozenset[str] = frozenset()
+    ignore_entities: frozenset[str] = frozenset()
 
     def __init__(
         self,
@@ -198,12 +199,16 @@ class PrivacyEngine:
         langextract_config_path: str = "",
         enable_pl_recognizers: bool = False,
         allow_list: Sequence[str] = (),
+        ignore_entities: Sequence[str] = (),
         vault: AliasVault | None = None,
     ) -> None:
         self.language = language
         self.score_threshold = score_threshold
         self.allow_list = frozenset(
             _allow_list_key(term) for term in allow_list if _allow_list_key(term)
+        )
+        self.ignore_entities = frozenset(
+            str(entity).strip().upper() for entity in ignore_entities if str(entity).strip()
         )
         self.vault = vault or AliasVault()
 
@@ -280,6 +285,15 @@ class PrivacyEngine:
                     result.start < end and result.end > start
                     for start, end in protected
                 )
+            ]
+
+        # Never alias entity types the operator opted out of (for example URL,
+        # when links are workspace identifiers rather than personal data).
+        if self.ignore_entities:
+            results = [
+                result
+                for result in results
+                if result.entity_type not in self.ignore_entities
             ]
 
         # Never alias explicitly allowed terms (product and tool names that the

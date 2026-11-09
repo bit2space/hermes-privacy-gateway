@@ -20,12 +20,13 @@ def memory_vault():
     return AliasVault(connection=sqlite3.connect(":memory:"), encoded_key=key)
 
 
-def engine_with_fake_spans(spans, allow_list=()):
+def engine_with_fake_spans(spans, allow_list=(), ignore_entities=()):
     engine = object.__new__(PrivacyEngine)
     engine.language = "en"
     engine.score_threshold = 0.55
     engine.vault = memory_vault()
     engine.allow_list = frozenset(term.casefold() for term in allow_list)
+    engine.ignore_entities = frozenset(e.upper() for e in ignore_entities)
 
     class FakeAnalyzer:
         def analyze(self, *, text, language, score_threshold):
@@ -61,6 +62,17 @@ def test_allow_list_does_not_exempt_spans_that_merely_contain_a_term():
 def test_allow_list_ignores_surrounding_punctuation():
     engine = engine_with_fake_spans([("Claude,", "PERSON")], allow_list=["Claude"])
     assert engine.sanitize("Zapytaj Claude, potem odpisz.") == "Zapytaj Claude, potem odpisz."
+
+
+def test_ignore_entities_keeps_ignored_types_only():
+    url = "https://app.notion.so/p/Task-413b3d88a7828130a02ec1cad7e4615e"
+    engine = engine_with_fake_spans(
+        [(url, "URL"), ("Kamil Grabowski", "PERSON")],
+        ignore_entities=["url"],
+    )
+    sanitized = engine.sanitize(f"Kamil Grabowski dodaj do {url}")
+    assert url in sanitized
+    assert "Kamil Grabowski" not in sanitized
 
 
 def test_digit_only_name_entities_yield_to_pattern_types():

@@ -5,6 +5,8 @@
 - Add `nlp_config` to select the Presidio NLP configuration, and ship
   `nlp-pl.yaml` (`pl_core_news_lg`) for mostly-Polish conversations.
 - Add `allow_list` for terms that must never be aliased.
+- Add `ignore_entities` for Presidio entity types that must never be aliased
+  (for example `URL`).
 - Add opt-in Polish recognizers (`enable_pl_recognizers`): phone numbers,
   PESEL, NIP, and ID card numbers, registered on the analyzer's own language
   registry because Presidio's Polish recognizers only load for `pl`.

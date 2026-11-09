@@ -22,6 +22,7 @@ plugins:
         langextract_config_path: ""
         nlp_config: nlp.yaml
         allow_list: []
+        ignore_entities: []
         enable_pl_recognizers: false
         block_non_text_content: true
         rehydrate_tool_allowlist: []
@@ -60,6 +61,12 @@ Presidio NLP configuration, relative to the plugin directory or absolute. `nlp.y
 Default: `[]`
 
 Terms that are never aliased, such as product and tool names the NER model mistakes for people or organizations (`Notion`, `MCP`, `Claude`). Matching is case-insensitive on the whole detected span, ignoring surrounding punctuation, so `Notion` does not exempt a span like `Notion Kamil`.
+
+### `ignore_entities`
+
+Default: `[]`
+
+Presidio entity types that are never aliased, matched case-insensitively on the entity type (`URL`, `DATE_TIME`, ...). Use it for types that carry identifiers the agent must act on rather than personal data, such as workspace links whose page id the agent needs. Every other type keeps its aliasing, and high-confidence secrets are still stripped.
 
 ### `enable_pl_recognizers`
 

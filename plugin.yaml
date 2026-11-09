@@ -41,6 +41,10 @@ config_schema:
     type: list
     default: []
     description: Terms that are never aliased (case-insensitive exact match on the detected span, surrounding punctuation ignored).
+  ignore_entities:
+    type: list
+    default: []
+    description: Presidio entity types that are never aliased (for example URL). Secrets are still stripped.
   enable_pl_recognizers:
     type: bool
     default: false

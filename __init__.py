@@ -55,6 +55,10 @@ def _get_engine(ctx):
                 allow_list=[
                     str(term) for term in (_config(ctx, "allow_list", []) or [])
                 ],
+                ignore_entities=[
+                    str(entity)
+                    for entity in (_config(ctx, "ignore_entities", []) or [])
+                ],
             )
         except Exception as exc:
             _ENGINE_ERROR = exc
