@@ -172,6 +172,9 @@ def blocked_content_for_key(key: str) -> Any:
     """Return a conservative provider-compatible replacement for common text roots."""
     if key == "messages":
         return [{"role": "user", "content": BLOCKED_REQUEST}]
+    if key == "input":
+        # Responses-style APIs (Codex) require a list of input items, not a bare string.
+        return [{"role": "user", "content": [{"type": "input_text", "text": BLOCKED_REQUEST}]}]
     return BLOCKED_REQUEST
 
 

@@ -8,6 +8,7 @@ import hmac
 import os
 import re
 import sqlite3
+import threading
 from typing import Optional
 
 from cryptography.fernet import Fernet, InvalidToken
@@ -93,6 +94,8 @@ class AliasVault:
         )
         self._fernet = Fernet(base64.urlsafe_b64encode(encryption_key))
         self._db = connection if connection is not None else _hermes_plugin_db()
+        # The sqlite connection is shared across cron/gateway worker threads.
+        self._lock = threading.RLock()
         self._init_db()
 
     def _init_db(self) -> None:
@@ -137,6 +140,10 @@ class AliasVault:
                 )
 
     def alias(self, kind: str, value: str) -> str:
+        with self._lock:
+            return self._alias_locked(kind, value)
+
+    def _alias_locked(self, kind: str, value: str) -> str:
         """Return a deterministic alias for an exact normalized entity value."""
         safe_kind = _safe_kind(kind)
         normalized = _normalize(value)
@@ -175,10 +182,11 @@ class AliasVault:
 
     def resolve(self, alias: str) -> Optional[str]:
         """Resolve one known alias. Unknown aliases return None."""
-        row = self._db.execute(
-            "SELECT ciphertext FROM aliases WHERE alias = ?",
-            (alias,),
-        ).fetchone()
+        with self._lock:
+            row = self._db.execute(
+                "SELECT ciphertext FROM aliases WHERE alias = ?",
+                (alias,),
+            ).fetchone()
         if not row:
             return None
 
